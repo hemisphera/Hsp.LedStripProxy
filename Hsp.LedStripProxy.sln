@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp3", "ConsoleApp3\ConsoleApp3.csproj", "{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hsp.LedStripProxy", "Hsp.LedStripProxy\Hsp.LedStripProxy.csproj", "{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using ConsoleApp3;
+using Hsp.LedStripProxy;
 
 var dispatcher = new LedStripDispatcher("loopMIDI Port");
 dispatcher.Frequency = TimeSpan.FromMilliseconds(25);

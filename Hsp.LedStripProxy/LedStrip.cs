@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using Hsp.Midi;
 using Hsp.Midi.Messages;
 
-namespace ConsoleApp3;
+namespace Hsp.LedStripProxy;
 
 public class LedStrip
 {
