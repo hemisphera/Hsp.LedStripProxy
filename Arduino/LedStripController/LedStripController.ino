@@ -44,36 +44,35 @@ void setup() {
 uint8_t currR = 100, currG = 100, currB = 100;
 
 void loop() {
-
   int packetSize = udp.parsePacket();
   if (packetSize == 0) {
     return;
   }
-
-  if (packetSize == MAX_PACKET_SIZE) {
-    int bytesRead = udp.read(udpPacketBuffer, packetSize);
-    if (udpPacketBuffer[0] != STRIP_ID) {
-      return;
-    }
-
-    for (int i = 0; i < 12; i++) {
-      uint32_t col = 0;
-      if (udpPacketBuffer[i + 4] == 0) {
-        col = pixels.Color(0, 0, 0);
-      } else {
-        col = pixels.Color(udpPacketBuffer[1], udpPacketBuffer[2], udpPacketBuffer[3]);
-      }
-      for (int j = 0; j < 10; j++) {
-        int8_t index = i * 10 + j;
-        int32_t actual = pixels.getPixelColor(index);
-        if (actual != col) {
-          pixels.setPixelColor(index, col);
-        }
-      }
-    }
-    pixels.show();
-  } else {
+  if (packetSize != MAX_PACKET_SIZE) {
     Serial.print("Invalid packet size ");
     Serial.println(packetSize);
+    return;
   }
+
+  int bytesRead = udp.read(udpPacketBuffer, packetSize);
+  if (udpPacketBuffer[0] != STRIP_ID) {
+    return;
+  }
+
+  for (int i = 0; i < 12; i++) {
+    uint32_t col = 0;
+    uint8_t factor = udpPacketBuffer[i + 4];
+    col = pixels.Color(
+      (udpPacketBuffer[1] * factor) / 127,
+      (udpPacketBuffer[2] * factor) / 127,
+      (udpPacketBuffer[3] * factor) / 127);
+    for (int j = 0; j < 10; j++) {
+      int8_t index = i * 10 + j;
+      int32_t actual = pixels.getPixelColor(index);
+      if (actual != col) {
+        pixels.setPixelColor(index, col);
+      }
+    }
+  }
+  pixels.show();
 }
