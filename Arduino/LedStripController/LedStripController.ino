@@ -61,11 +61,11 @@ void loop() {
 
   for (int i = 0; i < 12; i++) {
     uint32_t col = 0;
-    uint8_t factor = udpPacketBuffer[i + 4];
-    col = pixels.Color(
-      (udpPacketBuffer[1] * factor) / 127,
-      (udpPacketBuffer[2] * factor) / 127,
-      (udpPacketBuffer[3] * factor) / 127);
+    float factor = (float)udpPacketBuffer[i + 4] / (float)255;
+    uint8_t r = udpPacketBuffer[1] * factor;
+    uint8_t g = udpPacketBuffer[2] * factor;
+    uint8_t b = udpPacketBuffer[3] * factor;
+    col = pixels.Color(r, g, b);
     for (int j = 0; j < 10; j++) {
       int8_t index = i * 10 + j;
       int32_t actual = pixels.getPixelColor(index);
