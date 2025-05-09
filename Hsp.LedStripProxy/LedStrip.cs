@@ -31,8 +31,10 @@ public class LedStrip
 
   public const int LedCount = 12;
   public const int BufferSize = LedCount + 4;
+  private double _multiplier = 1.0;
 
   private readonly byte[] _buffer = new byte[BufferSize];
+  //private readonly byte[] _bitStates = new byte[BufferSize];
 
 
   public LedStrip(byte index)
@@ -49,6 +51,7 @@ public class LedStrip
     if (message is not ChannelMessage cm) return;
     if (cm.Channel != Index) return;
 
+    if (BitMultiplier(cm)) return;
     if (BitOn(cm)) return;
     if (BitOff(cm)) return;
     if (ChangeColor(cm)) return;
@@ -85,6 +88,11 @@ public class LedStrip
     return msg.Command == ChannelCommand.NoteOn && BitOn((byte)msg.Data1, (byte)(msg.Data2 * 2));
   }
 
+  private bool BitOff(ChannelMessage msg)
+  {
+    return msg.Command == ChannelCommand.NoteOff && BitOff((byte)msg.Data1);
+  }
+
   public bool BitOn(byte bitNo, byte value)
   {
     if (bitNo > LedCount - 1) return false;
@@ -94,11 +102,6 @@ public class LedStrip
     }
 
     return true;
-  }
-
-  private bool BitOff(ChannelMessage msg)
-  {
-    return msg.Command == ChannelCommand.NoteOff && BitOn((byte)msg.Data1, (byte)(msg.Data2 * 2));
   }
 
   public bool BitOff(byte bitNo)
@@ -112,13 +115,25 @@ public class LedStrip
     return true;
   }
 
+  private bool BitMultiplier(ChannelMessage msg)
+  {
+    if (msg is not { Command: ChannelCommand.Controller, Data1: 110 }) return false;
+    _multiplier = msg.Data2 / 127.0;
+    return true;
+  }
+
   public async Task Send(UdpClient client, CancellationToken ct)
   {
     byte[] buf;
     lock (_buffer)
     {
-      buf = new byte[_buffer.Length];
-      Array.Copy(_buffer, buf, _buffer.Length);
+      buf = _buffer
+        .Select((b, idx) =>
+        {
+          if (idx < 4) return b;
+          return (byte)(b * _multiplier);
+        })
+        .ToArray();
     }
 
     await client.SendAsync(buf, ct);
