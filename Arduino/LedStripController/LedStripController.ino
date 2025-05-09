@@ -1,20 +1,19 @@
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include <WiFiUdp.h>
 
 #define NUM_LEDS 120
-#define STRIP_ID 0
 #define LED_PIN D5
 #define MAX_PACKET_SIZE 16  // 10 segments + color
+const uint8_t stripId = 3;
 
 Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
-
-const char* ssid = "<ssid>";
-const char* password = "<key>";
 
 uint8_t udpPacketBuffer[MAX_PACKET_SIZE];
 
 WiFiUDP udp;
+WiFiManager wifiManager;
 
 int idx = 0;
 bool off = false;
@@ -23,10 +22,11 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Connecting WiFi");
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  char* hostName = const_cast<char*>(("led-strip-" + String(stripId)).c_str());
+  wifiManager.setHostname(hostName);
+  if (!wifiManager.autoConnect(hostName, "Password123!")) {
+    ESP.restart();
+    delay(1000);
   }
 
   Serial.println("");
@@ -55,7 +55,7 @@ void loop() {
   }
 
   int bytesRead = udp.read(udpPacketBuffer, packetSize);
-  if (udpPacketBuffer[0] != STRIP_ID) {
+  if (udpPacketBuffer[0] != stripId - 1) {
     return;
   }
 
