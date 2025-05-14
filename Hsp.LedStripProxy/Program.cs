@@ -1,18 +1,22 @@
-﻿using System.Drawing;
+﻿using System.Reflection;
 using Hsp.LedStripProxy;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-var dispatcher = new LedStripDispatcher("loopMIDI Port");
-dispatcher.Frequency = TimeSpan.FromMilliseconds(25);
-dispatcher.Start();
-
-foreach (var str in dispatcher.Strips)
-{
-  str.ChangeColor(Color.FromArgb(255, 120, 120, 0));
-}
-
-Console.WriteLine($"Listening on '{dispatcher.MidiDeviceName}'");
-Console.ReadLine();
-
-Console.WriteLine("Stopping...");
-dispatcher.Stop();
-dispatcher.Dispose();
+await Host.CreateDefaultBuilder(args)
+  .ConfigureAppConfiguration((hostContext, cb) =>
+  {
+    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
+    cb.SetBasePath(basePath);
+    cb.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+    cb.AddJsonFile($"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json", optional: true);
+  })
+  .ConfigureServices((hostContext, services) =>
+  {
+    services.Configure<Settings>(hostContext.Configuration);
+    services.AddSingleton<IPackageSender, UdpPackageSender>();
+    services.AddLogging();
+    services.AddHostedService<LedStripDispatcher>();
+  })
+  .RunConsoleAsync();

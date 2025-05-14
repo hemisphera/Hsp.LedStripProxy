@@ -2,13 +2,21 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hsp.Midi" Version="0.0.4" />
+        <PackageReference Include="Hsp.Midi" Version="0.0.4"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

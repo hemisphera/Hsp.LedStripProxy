@@ -34,7 +34,7 @@ public class LedStrip
   private double _multiplier = 1.0;
 
   private readonly byte[] _buffer = new byte[BufferSize];
-  //private readonly byte[] _bitStates = new byte[BufferSize];
+  private readonly byte[] _sendBuffer = new byte[BufferSize];
 
 
   public LedStrip(byte index)
@@ -122,20 +122,19 @@ public class LedStrip
     return true;
   }
 
-  public async Task Send(UdpClient client, CancellationToken ct)
+  public async Task Send(IPackageSender sender, CancellationToken ct)
   {
-    byte[] buf;
     lock (_buffer)
     {
-      buf = _buffer
-        .Select((b, idx) =>
-        {
-          if (idx < 4) return b;
-          return (byte)(b * _multiplier);
-        })
-        .ToArray();
+      for (var i = 0; i < BufferSize; i++)
+      {
+        _sendBuffer[i] =
+          i < 4
+            ? _buffer[i]
+            : (byte)(_buffer[i] * _multiplier);
+      }
     }
 
-    await client.SendAsync(buf, ct);
+    await sender.Send(_sendBuffer, ct);
   }
 }
