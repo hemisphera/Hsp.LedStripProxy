@@ -16,17 +16,17 @@ public sealed class UdpPackageSender : IPackageSender, IDisposable
   {
     _client = new UdpClient();
     _client.Connect(new IPEndPoint(IPAddress.Broadcast, settings.Value.UdpPort));
-    logger.LogInformation("Sending UDP packages to {IpAddress}:{Port}", IPAddress.Broadcast, settings.Value.UdpPort);
+    logger.LogInformation("Sending UDP packages to port {Port}", settings.Value.UdpPort);
 
     Task.Run(async () =>
     {
       var token = _cts.Token;
       while (!_cts.IsCancellationRequested)
       {
-        await Task.Delay(TimeSpan.FromSeconds(3), token);
+        await Task.Delay(TimeSpan.FromSeconds(10), token);
         var v = _packageCounter;
         _packageCounter = 0;
-        logger.LogInformation("{PackageCounter} packages sent in the last 3 seconds", v);
+        logger.LogInformation("{PackageCounter} packages sent.", v);
       }
     });
   }
