@@ -6,25 +6,31 @@
 #define NUM_LEDS 120
 #define LED_PIN D5
 #define MAX_PACKET_SIZE 16  // 10 segments + color
-const uint8_t stripId = 1; // this is 1-based and is the actual number
+#define DEBUG 0
+
+const uint8_t stripId = 4;  // this is 1-based and is the actual number
+const int redChannel = 0;
+const int greenChannel = 1;
+const int blueChannel = 2;
 
 Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-uint8_t udpPacketBuffer[MAX_PACKET_SIZE];
+uint8_t ledGridBuffer[MAX_PACKET_SIZE];
+int packetCount[2];
 
 WiFiUDP udp;
 WiFiManager wifiManager;
 
-int idx = 0;
-bool off = false;
+unsigned long lastEmit = 0;
+unsigned long lastDebugEmit = 0;
+unsigned long lastGridUpdate = 0;
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Connecting WiFi");
-
-  char* hostName = const_cast<char*>(("led-strip-" + String(stripId)).c_str());
+  String hostName = "led-strip-" + stripId;
   wifiManager.setHostname(hostName);
-  if (!wifiManager.autoConnect(hostName, "Password123!")) {
+  if (!wifiManager.autoConnect(hostName.c_str(), "Password123!")) {
     ESP.restart();
     delay(1000);
   }
@@ -34,37 +40,112 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
+  // setup LED indicator
+  //setupIndicatorLed();
+
+  // setup UDP receiver
   udp.begin(9977);
 
+  // setup LED grid
   pixels.begin();  // Initialize the NeoPixel library
   pixels.setBrightness(15);
   pinMode(LED_BUILTIN, OUTPUT);
 }
 
-uint8_t currR = 100, currG = 100, currB = 100;
-
 void loop() {
+  int res = readIncomingPackets();
+  if (res < 0)
+    packetCount[0]++;
+  else if (res > 0)
+    packetCount[1]++;
+  //toggleIndicatorLed();
+  updateLedGrid();
+  emitDebug();
+}
+
+void emitDebug() {
+  if (DEBUG != 1) return;
+  if (millis() - lastDebugEmit <= 1000) return;
+  lastDebugEmit = millis();
+  Serial.print(packetCount[0]);
+  Serial.print(" ");
+  Serial.println(packetCount[1]);
+}
+
+int readIncomingPackets() {
   int packetSize = udp.parsePacket();
-  if (packetSize == 0) {
-    return;
-  }
-  if (packetSize != MAX_PACKET_SIZE) {
-    Serial.print("Invalid packet size ");
-    Serial.println(packetSize);
-    return;
+  if (packetSize == 0) return 0;
+
+  if (packetSize > 0 && packetSize != MAX_PACKET_SIZE) {
+    packetCount[1]++;
+    return -1;
   }
 
-  int bytesRead = udp.read(udpPacketBuffer, packetSize);
-  if (udpPacketBuffer[0] != stripId - 1) {
-    return;
+  uint8_t udpBuffer[MAX_PACKET_SIZE];
+  int bytesRead = udp.read(udpBuffer, packetSize);
+  if (udpBuffer[0] != stripId - 1) return 0;
+
+  for (int i = 0; i < bytesRead; i++) {
+    ledGridBuffer[i] = udpBuffer[i];
   }
+  return 1;
+}
+
+void setupIndicatorLed() {
+  int freq = 5000;     // PWM frequency (Hz)
+  int resolution = 8;  // PWM resolution (bits) - gives values from 0 to 255
+
+  // Configure PWM channels
+  ledcSetup(redChannel, freq, resolution);
+  ledcSetup(greenChannel, freq, resolution);
+  ledcSetup(blueChannel, freq, resolution);
+
+  // Attach the LED pins to the PWM channels
+  ledcAttachPin(9, redChannel);
+  ledcAttachPin(10, greenChannel);
+  ledcAttachPin(11, blueChannel);
+}
+
+void toggleIndicatorLed() {
+  if (millis() - lastEmit <= 1000) return;
+  lastEmit = millis();
+
+  uint8_t r = 0;
+  uint8_t g = 0;
+  uint8_t b = 0;
+
+  if (packetCount[0] == 0 && packetCount[1] != 0) {
+    r = 255;
+    g = 0;
+    b = 0;
+  } else if (packetCount[0] != 0 && packetCount[1] == 0) {
+    r = 0;
+    g = 255;
+    b = 0;
+  } else if (packetCount[0] != 0 && packetCount[1] != 0) {
+    r = 255;
+    g = 140;
+    b = 0;
+  }
+
+  packetCount[0] = 0;
+  packetCount[1] = 0;
+
+  ledcWrite(redChannel, r);
+  ledcWrite(greenChannel, g);
+  ledcWrite(blueChannel, b);
+}
+
+void updateLedGrid() {
+  if (millis() - lastGridUpdate < 50) return;
+  lastGridUpdate = millis();
 
   for (int i = 0; i < 12; i++) {
     uint32_t col = 0;
-    float factor = (float)udpPacketBuffer[i + 4] / (float)255;
-    uint8_t r = udpPacketBuffer[1] * factor;
-    uint8_t g = udpPacketBuffer[2] * factor;
-    uint8_t b = udpPacketBuffer[3] * factor;
+    float factor = (float)ledGridBuffer[i + 4] / (float)255;
+    uint8_t r = ledGridBuffer[1] * factor;
+    uint8_t g = ledGridBuffer[2] * factor;
+    uint8_t b = ledGridBuffer[3] * factor;
     col = pixels.Color(r, g, b);
     for (int j = 0; j < 10; j++) {
       int8_t index = i * 10 + j;
