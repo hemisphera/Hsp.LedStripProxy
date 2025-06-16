@@ -6,7 +6,7 @@
 #define NUM_LEDS 120
 #define LED_PIN D5
 #define MAX_PACKET_SIZE 16  // 10 segments + color
-#define DEBUG 1
+#define DEBUG 0
 
 const uint8_t stripId = 4;  // this is 1-based and is the actual number
 const int redChannel = 0;
