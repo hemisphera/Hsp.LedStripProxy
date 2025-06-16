@@ -7,6 +7,8 @@ namespace Hsp.LedStripProxy;
 
 public class LedStrip
 {
+  private readonly byte _groupChannel;
+
   public byte Index
   {
     get
@@ -40,6 +42,14 @@ public class LedStrip
   public LedStrip(byte index)
   {
     ChangeColor(Color.FromArgb(255, 255, 255, 255));
+    _groupChannel = index switch
+    {
+      0 => 4,
+      1 => 4,
+      2 => 5,
+      3 => 5,
+      _ => 0
+    };
     lock (_buffer)
     {
       _buffer[0] = index;
@@ -49,12 +59,17 @@ public class LedStrip
   public void ProcessMessage(IMidiMessage message)
   {
     if (message is not ChannelMessage cm) return;
-    if (cm.Channel != Index) return;
+    if (!CanHandleChannel(cm.Channel)) return;
 
     if (BitMultiplier(cm)) return;
     if (BitOn(cm)) return;
     if (BitOff(cm)) return;
     if (ChangeColor(cm)) return;
+  }
+
+  private bool CanHandleChannel(int channel)
+  {
+    return channel == Index || channel == _groupChannel;
   }
 
   private bool ChangeColor(ChannelMessage cm)
