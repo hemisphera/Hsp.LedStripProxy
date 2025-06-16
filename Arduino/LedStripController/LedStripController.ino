@@ -6,7 +6,7 @@
 #define NUM_LEDS 120
 #define LED_PIN D5
 #define MAX_PACKET_SIZE 16  // 10 segments + color
-#define DEBUG 0
+#define DEBUG 1
 
 const uint8_t stripId = 4;  // this is 1-based and is the actual number
 const int redChannel = 0;
@@ -17,6 +17,7 @@ Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 uint8_t ledGridBuffer[MAX_PACKET_SIZE];
 int packetCount[2];
+int packetRate[2];
 
 WiFiUDP udp;
 WiFiManager wifiManager;
@@ -24,9 +25,11 @@ WiFiManager wifiManager;
 unsigned long lastEmit = 0;
 unsigned long lastDebugEmit = 0;
 unsigned long lastGridUpdate = 0;
+unsigned long lastGridUpdateDuration = 0;
+unsigned long lastPacketRateUpdate = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Connecting WiFi");
   String hostName = "led-strip-" + stripId;
   wifiManager.setHostname(hostName);
@@ -54,22 +57,40 @@ void setup() {
 
 void loop() {
   int res = readIncomingPackets();
-  if (res < 0)
-    packetCount[0]++;
-  else if (res > 0)
-    packetCount[1]++;
+  trackPacketCount(res);
+
   //toggleIndicatorLed();
   updateLedGrid();
   emitDebug();
+}
+
+void trackPacketCount(int res) {
+  if (res < 0)
+    packetCount[0]++;
+  if (res > 0)
+    packetCount[1]++;
+
+  if (millis() - lastPacketRateUpdate >= 1000) {
+    lastPacketRateUpdate = millis();
+    packetRate[0] = packetCount[0];
+    packetCount[0] = 0;
+    packetRate[1] = packetCount[1];
+    packetCount[1] = 0;
+  }
 }
 
 void emitDebug() {
   if (DEBUG != 1) return;
   if (millis() - lastDebugEmit <= 1000) return;
   lastDebugEmit = millis();
-  Serial.print(packetCount[0]);
-  Serial.print(" ");
-  Serial.println(packetCount[1]);
+  Serial.print("fail: ");
+  Serial.print(packetRate[0]);
+  Serial.print("/s - ok: ");
+  Serial.print(packetRate[1]);
+  Serial.println("/s");
+  Serial.print("last grid update: ");
+  Serial.print(lastGridUpdateDuration);
+  Serial.println("ms");
 }
 
 int readIncomingPackets() {
@@ -137,9 +158,10 @@ void toggleIndicatorLed() {
 }
 
 void updateLedGrid() {
-  if (millis() - lastGridUpdate < 50) return;
+  if (millis() - lastGridUpdate < 20) return;
   lastGridUpdate = millis();
 
+  long start = millis();
   for (int i = 0; i < 12; i++) {
     uint32_t col = 0;
     float factor = (float)ledGridBuffer[i + 4] / (float)255;
@@ -156,4 +178,5 @@ void updateLedGrid() {
     }
   }
   pixels.show();
+  lastGridUpdateDuration = millis() - start;
 }
