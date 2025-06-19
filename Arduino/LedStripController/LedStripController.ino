@@ -29,16 +29,18 @@ unsigned long lastGridUpdateDuration = 0;
 unsigned long lastPacketRateUpdate = 0;
 
 void setup() {
+  delay(4000);
   Serial.begin(115200);
   Serial.println("Connecting WiFi");
-  String hostName = "led-strip-" + stripId;
+  String hostName = "strip" + String(stripId);
+  Serial.print("Hostname: ");
+  Serial.println(hostName);
   wifiManager.setHostname(hostName);
   if (!wifiManager.autoConnect(hostName.c_str(), "Password123!")) {
     ESP.restart();
     delay(1000);
   }
 
-  Serial.println("");
   Serial.println("WiFi connected");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
