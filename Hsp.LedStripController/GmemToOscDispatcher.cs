@@ -42,7 +42,7 @@ public class GmemToOscDispatcher : BackgroundService
         var msg = new Message($"/led/{i}");
         for (var j = 0; j < NumSegmentsPerLedStrips; j++)
         {
-          msg.PushAtom((int)block[i * NumLedStrips + j]);
+          msg.PushAtom((int)block[i * NumSegmentsPerLedStrips + j]);
         }
 
         await msg.Send(_oscClient);
