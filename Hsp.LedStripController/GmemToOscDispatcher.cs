@@ -1,17 +1,18 @@
 ﻿using Hsp.Osc;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReaSharp;
 
 namespace Hsp.LedStripController;
 
-public class GmemToOscDispatcher : BackgroundService
+public class GmemToOscDispatcher
 {
   private readonly GmemService _memService;
   private readonly IOscClient _oscClient;
   private readonly ILogger<GmemToOscDispatcher> _logger;
   private const int NumLedStrips = 4;
   private const int NumSegmentsPerLedStrips = 12;
+  private CancellationTokenSource? _cts;
+  private Task? _loopTask;
 
 
   public GmemToOscDispatcher(GmemService memService, IOscClient oscClient, ILogger<GmemToOscDispatcher> logger)
@@ -22,24 +23,28 @@ public class GmemToOscDispatcher : BackgroundService
   }
 
 
-  public override async Task StartAsync(CancellationToken cancellationToken)
+  public async Task StartAsync()
   {
-    await base.StartAsync(cancellationToken);
+    await StopAsync();
+
+    _cts = new CancellationTokenSource();
+    var token = _cts.Token;
     _memService.Connect("ledcontroller");
     await _oscClient.ConnectAsync();
     _logger.LogInformation("OSC dispatcher started.");
+    _loopTask = Loop(token);
   }
 
-  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+  private async Task Loop(CancellationToken ct)
   {
     var block = new double[NumSegmentsPerLedStrips * NumLedStrips];
-    while (!stoppingToken.IsCancellationRequested)
+    while (!ct.IsCancellationRequested)
     {
-      await Task.Delay(10, stoppingToken);
+      await Task.Delay(10, ct);
       _memService.Read(0, block);
       for (var i = 0; i < NumLedStrips; i++)
       {
-        var msg = new Message($"/led/{i}");
+        var msg = new Message($"/led/{i + 1}");
         for (var j = 0; j < NumSegmentsPerLedStrips; j++)
         {
           msg.PushAtom((int)block[i * NumSegmentsPerLedStrips + j]);
@@ -50,10 +55,30 @@ public class GmemToOscDispatcher : BackgroundService
     }
   }
 
-  public override async Task StopAsync(CancellationToken cancellationToken)
+  public async Task StopAsync()
   {
+    if (_cts == null) return;
+
+    _cts.Cancel();
+    
+    // Wait for the loop task to complete with a timeout
+    if (_loopTask != null)
+    {
+      try
+      {
+        await _loopTask.WaitAsync(TimeSpan.FromSeconds(2));
+      }
+      catch (TimeoutException)
+      {
+        _logger.LogWarning("Loop task did not complete within timeout.");
+      }
+    }
+
     _memService.Disconnect();
-    await base.StopAsync(cancellationToken);
     await _oscClient.DisconnectAsync();
+    
+    _cts.Dispose();
+    _cts = null;
+    _loopTask = null;
   }
 }

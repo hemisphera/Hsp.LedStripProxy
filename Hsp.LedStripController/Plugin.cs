@@ -28,14 +28,17 @@ public static class Plugin
       {
         sc.AddSingleton<ICommandRegistry, DefaultCommandRegistry>();
         sc.AddSingleton<GmemService>();
-        sc.AddSingleton<IOscClient>(c => new OscUdpClient(IPAddress.Parse("127.0.0.1"), 9100, 9101));
-        sc.AddHostedService<GmemToOscDispatcher>();
+        sc.AddSingleton<IOscClient>(c => new OscUdpClient(IPAddress.Broadcast, 9100, 9101));
+        sc.AddSingleton<GmemToOscDispatcher>();
       })
       .Build();
 
     try
     {
       var state = PluginState.Initialize(ReaperPluginInfo.FromPointer(rec), host);
+      var commands = host.Services.GetRequiredService<ICommandRegistry>();
+      commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
+      commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
       return 1;
     }
     catch (Exception ex)

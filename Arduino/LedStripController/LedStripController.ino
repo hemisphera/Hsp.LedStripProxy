@@ -108,10 +108,10 @@ int readIncomingPackets() {
   int bytesRead = udp.read(udpBuffer, OSC_PACKET_SIZE);
   if (bytesRead != OSC_PACKET_SIZE) return -1;
 
-  // Verify OSC address "/led/N" where N is 0-based strip index
+  // Verify OSC address "/led/N" where N is 1-based strip index
   if (udpBuffer[0] != '/' || udpBuffer[1] != 'l' || udpBuffer[2] != 'e' ||
       udpBuffer[3] != 'd' || udpBuffer[4] != '/' ||
-      udpBuffer[5] != ('0' + (stripId - 1))) {
+      udpBuffer[5] != ('0' + stripId)) {
     return 0;
   }
 
