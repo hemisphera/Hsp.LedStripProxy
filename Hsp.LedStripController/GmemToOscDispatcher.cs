@@ -31,8 +31,8 @@ public class GmemToOscDispatcher
     var token = _cts.Token;
     _memService.Connect("ledcontroller");
     await _oscClient.ConnectAsync();
-    _logger.LogInformation("OSC dispatcher started.");
     _loopTask = Loop(token);
+    _logger.LogInformation("OSC dispatcher started.");
   }
 
   private async Task Loop(CancellationToken ct)
@@ -40,17 +40,26 @@ public class GmemToOscDispatcher
     var block = new double[NumSegmentsPerLedStrips * NumLedStrips];
     while (!ct.IsCancellationRequested)
     {
-      await Task.Delay(10, ct);
-      _memService.Read(0, block);
-      for (var i = 0; i < NumLedStrips; i++)
+      try
       {
-        var msg = new Message($"/led/{i + 1}");
-        for (var j = 0; j < NumSegmentsPerLedStrips; j++)
+        await Task.Delay(10, ct);
+        _memService.Read(0, block);
+        for (var i = 0; i < NumLedStrips; i++)
         {
-          msg.PushAtom((int)block[i * NumSegmentsPerLedStrips + j]);
-        }
+          var msg = new Message($"/led/{i + 1}");
+          for (var j = 0; j < NumSegmentsPerLedStrips; j++)
+          {
+            msg.PushAtom((int)block[i * NumSegmentsPerLedStrips + j]);
+          }
 
-        await msg.Send(_oscClient);
+          await msg.Send(_oscClient);
+        }
+      }
+      catch (TaskCanceledException)
+      {
+      }
+      catch (OperationCanceledException)
+      {
       }
     }
   }
@@ -59,8 +68,8 @@ public class GmemToOscDispatcher
   {
     if (_cts == null) return;
 
-    _cts.Cancel();
-    
+    await _cts.CancelAsync();
+
     // Wait for the loop task to complete with a timeout
     if (_loopTask != null)
     {
@@ -76,9 +85,10 @@ public class GmemToOscDispatcher
 
     _memService.Disconnect();
     await _oscClient.DisconnectAsync();
-    
+
     _cts.Dispose();
     _cts = null;
     _loopTask = null;
+    _logger.LogInformation("OSC dispatcher stopped.");
   }
 }

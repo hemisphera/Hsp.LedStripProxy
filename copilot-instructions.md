@@ -35,7 +35,7 @@ Every message is exactly **72 bytes**. Packets with a different size are silentl
 
 | Offset | Size | Field       | Content                                                    |
 |--------|------|-------------|------------------------------------------------------------|
-| 0      | 8 B  | Address     | `/led/N\0\0` — N is the 0-based strip index (ASCII digit)  |
+| 0      | 8 B  | Address     | `/led/N\0\0` — N is the 1-based strip index (ASCII digit)  |
 | 8      | 16 B | Type tag    | `,iiiiiiiiiiii\0\0\0` — 12 OSC int32 arguments             |
 | 24     | 48 B | Data        | 12 × big-endian int32, each encoding one segment as ARGB   |
 
@@ -55,7 +55,7 @@ OSC int32 (`i`) is used instead of float32 (`f`) to avoid IEEE 754 NaN/Inf colli
 - The Arduino listens on UDP port 9977.
 - A packet is accepted only when **all** conditions are met:
   1. `packetSize == 72`
-  2. Address matches `/led/N` where `N == '0' + (stripId - 1)` (the Arduino's `stripId` is 1-based)
+  2. Address matches `/led/N` where `N == stripId` (the Arduino's `stripId` is 1-based, 1–4)
 - Accepted data is copied into `segBuffer[12][4]` (`[segment][A, R, G, B]`).
 - The LED grid is refreshed at most every **20 ms**.
 - Each strip has **12 segments**, each driving **10 physical LEDs** (120 LEDs total).
@@ -78,8 +78,8 @@ This model is backward-compatible with the MIDI implementation, which sets a sin
 
 | OSC address | Arduino `stripId` |
 |-------------|-------------------|
-| `/led/0`    | 1                 |
-| `/led/1`    | 2                 |
-| `/led/2`    | 3                 |
-| `/led/3`    | 4                 |
+| `/led/1`    | 1                 |
+| `/led/2`    | 2                 |
+| `/led/3`    | 3                 |
+| `/led/4`    | 4                 |
 

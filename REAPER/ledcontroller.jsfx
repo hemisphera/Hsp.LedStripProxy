@@ -2,6 +2,7 @@ desc: LED Strip Controller
 // Converts MIDI messages into ARGB segment values written to the shared gmem block
 // "ledcontroller", which GmemToOscDispatcher reads and broadcasts as OSC messages.
 //
+// Named-list sliders in JSFX use 0-based indices regardless of min/max.
 // MIDI protocol (all channels are 0-based):
 //   Notes  0-11  on own channel  -> segment brightness (velocity * 2, 0-254)
 //   Note off 0-11                -> segment brightness = 0
@@ -12,7 +13,7 @@ desc: LED Strip Controller
 //
 // MIDI data is always forwarded unchanged to allow chaining multiple instances.
 
-slider1:1<1,4,1{Strip 1,Strip 2,Strip 3,Strip 4}>LED Strip
+slider1:0<0,3,1{Strip 1,Strip 2,Strip 3,Strip 4}>LED Strip
 options:gmem=ledcontroller
 
 @init
@@ -25,7 +26,7 @@ strip_b   = 255;
 strip_mul = 1.0;
 
 @slider
-strip_idx = slider1 - 1;             // 0-based strip index (0..3)
+strip_idx = slider1;                 // 0-based strip index (0..3)
 gmem_base = strip_idx * 12;          // each strip occupies 12 consecutive gmem cells
 
 @block
