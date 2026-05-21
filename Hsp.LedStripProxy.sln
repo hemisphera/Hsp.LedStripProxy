@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hsp.LedStripProxy", "Hsp.LedStripProxy\Hsp.LedStripProxy.csproj", "{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hsp.LedStripController", "Hsp.LedStripController\Hsp.LedStripController.csproj", "{66D4A3DA-AE98-4571-B75A-73F71D150A33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReaSharp", "..\ReaSharp\ReaSharp\ReaSharp.csproj", "{F4FA97E6-96C8-4B76-9328-9C2361B8E94F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83B17C3D-B3DF-4689-8FB4-7ECEFC280DA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66D4A3DA-AE98-4571-B75A-73F71D150A33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66D4A3DA-AE98-4571-B75A-73F71D150A33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66D4A3DA-AE98-4571-B75A-73F71D150A33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66D4A3DA-AE98-4571-B75A-73F71D150A33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4FA97E6-96C8-4B76-9328-9C2361B8E94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4FA97E6-96C8-4B76-9328-9C2361B8E94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4FA97E6-96C8-4B76-9328-9C2361B8E94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4FA97E6-96C8-4B76-9328-9C2361B8E94F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
