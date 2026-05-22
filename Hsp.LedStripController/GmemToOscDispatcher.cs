@@ -1,4 +1,5 @@
-﻿using Hsp.Osc;
+﻿using System.Diagnostics;
+using Hsp.Osc;
 using Microsoft.Extensions.Logging;
 using ReaSharp;
 
@@ -13,6 +14,8 @@ public class GmemToOscDispatcher
   private const int NumSegmentsPerLedStrips = 12;
   private CancellationTokenSource? _cts;
   private Task? _loopTask;
+  private int _failureCount;
+  private Stopwatch? _failureWatch;
 
 
   public GmemToOscDispatcher(GmemService memService, IOscClient oscClient, ILogger<GmemToOscDispatcher> logger)
@@ -27,6 +30,7 @@ public class GmemToOscDispatcher
   {
     await StopAsync();
 
+    _failureWatch = Stopwatch.StartNew();
     _cts = new CancellationTokenSource();
     var token = _cts.Token;
     _memService.Connect("ledcontroller");
@@ -40,6 +44,7 @@ public class GmemToOscDispatcher
     var block = new double[NumSegmentsPerLedStrips * NumLedStrips];
     while (!ct.IsCancellationRequested)
     {
+      EmitFailures();
       try
       {
         await Task.Delay(10, ct);
@@ -55,13 +60,21 @@ public class GmemToOscDispatcher
           await msg.Send(_oscClient);
         }
       }
-      catch (TaskCanceledException)
+      catch
       {
-      }
-      catch (OperationCanceledException)
-      {
+        // ignore
+        _failureCount++;
       }
     }
+  }
+
+  private void EmitFailures()
+  {
+    if (_failureCount == 0 || _failureWatch == null) return;
+    if (_failureWatch.ElapsedMilliseconds < 5000) return;
+    _logger.LogWarning("{count} messages have failed to send.", _failureCount);
+    _failureCount = 0;
+    _failureWatch.Restart();
   }
 
   public async Task StopAsync()
@@ -69,6 +82,7 @@ public class GmemToOscDispatcher
     if (_cts == null) return;
 
     await _cts.CancelAsync();
+    _failureWatch?.Stop();
 
     // Wait for the loop task to complete with a timeout
     if (_loopTask != null)
