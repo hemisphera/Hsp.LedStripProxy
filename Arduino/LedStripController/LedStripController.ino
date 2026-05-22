@@ -49,7 +49,7 @@ void setup() {
   //setupIndicatorLed();
 
   // setup UDP receiver
-  udp.begin(9977);
+  udp.begin(9100);
 
   // setup LED grid
   pixels.begin();  // Initialize the NeoPixel library

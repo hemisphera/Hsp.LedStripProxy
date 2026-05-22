@@ -28,7 +28,7 @@ public static class Plugin
       {
         sc.AddSingleton<ICommandRegistry, DefaultCommandRegistry>();
         sc.AddSingleton<GmemService>();
-        sc.AddSingleton<IOscClient>(c => new OscUdpClient(IPAddress.Broadcast, 9100, 9101));
+        sc.AddSingleton<IOscClient>(c => new OscUdpClient(9100));
         sc.AddSingleton<GmemToOscDispatcher>();
       })
       .Build();
