@@ -9,19 +9,24 @@ public class GmemToOscDispatcher
 {
   private readonly GmemService _memService;
   private readonly IOscClient _oscClient;
+  private readonly List<LedStrip> _strips = [];
   private readonly ILogger<GmemToOscDispatcher> _logger;
   private const int NumLedStrips = 4;
-  private const int NumSegmentsPerLedStrips = 12;
   private CancellationTokenSource? _cts;
   private Task? _loopTask;
   private int _failureCount;
   private Stopwatch? _failureWatch;
 
 
-  public GmemToOscDispatcher(GmemService memService, IOscClient oscClient, ILogger<GmemToOscDispatcher> logger)
+  public GmemToOscDispatcher(
+    GmemService memService, IOscClient oscClient,
+    LedStripProgramRegistry programRegistry, ILogger<GmemToOscDispatcher> logger)
   {
     _memService = memService;
     _oscClient = oscClient;
+
+    _strips.AddRange(Enumerable.Range(0, NumLedStrips).Select(i => new LedStrip(i, programRegistry)));
+
     _logger = logger;
   }
 
@@ -41,7 +46,8 @@ public class GmemToOscDispatcher
 
   private async Task Loop(CancellationToken ct)
   {
-    var block = new double[NumSegmentsPerLedStrips * NumLedStrips];
+    var block = new double[LedStrip.CellsPerStrip * NumLedStrips];
+    var segments = new double[LedStrip.NumSegmentsPerLedStrips];
     while (!ct.IsCancellationRequested)
     {
       EmitFailures();
@@ -49,12 +55,13 @@ public class GmemToOscDispatcher
       {
         await Task.Delay(10, ct);
         _memService.Read(0, block);
-        for (var i = 0; i < NumLedStrips; i++)
+        foreach (var strip in _strips)
         {
-          var msg = new Message($"/led/{i + 1}");
-          for (var j = 0; j < NumSegmentsPerLedStrips; j++)
+          var msg = new Message($"/led/{strip.Index + 1}");
+          strip.Render(block, segments);
+          for (var j = 0; j < segments.Length; j++)
           {
-            msg.PushAtom((int)block[i * NumSegmentsPerLedStrips + j]);
+            msg.PushAtom((int)segments[j]);
           }
 
           await msg.Send(_oscClient);

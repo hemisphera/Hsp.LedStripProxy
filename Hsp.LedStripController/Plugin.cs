@@ -1,5 +1,5 @@
-﻿using System.Net;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using Hsp.LedStripController.Programs;
 using Hsp.Osc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +29,7 @@ public static class Plugin
         sc.AddSingleton<ICommandRegistry, DefaultCommandRegistry>();
         sc.AddSingleton<GmemService>();
         sc.AddSingleton<IOscClient>(c => new OscUdpClient(9100));
+        sc.AddSingleton<LedStripProgramRegistry>();
         sc.AddSingleton<GmemToOscDispatcher>();
       })
       .Build();
@@ -37,6 +38,11 @@ public static class Plugin
     {
       var state = PluginState.Initialize(ReaperPluginInfo.FromPointer(rec), host);
       var commands = host.Services.GetRequiredService<ICommandRegistry>();
+
+      // Register LED strip programs (program number -> implementation).
+      var programRegistry = host.Services.GetRequiredService<LedStripProgramRegistry>();
+      programRegistry.Register<ColorCycleProgram>(1);
+
       commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
       return 1;
