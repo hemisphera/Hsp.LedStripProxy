@@ -1,5 +1,3 @@
-using System.Drawing;
-
 namespace Hsp.LedStripController.Programs;
 
 /// <summary>
@@ -8,7 +6,6 @@ namespace Hsp.LedStripController.Programs;
 /// </summary>
 public class ColorCycleProgram : ILedStripProgram
 {
-  private const int NumSegments = 12;
   private const double HuesPerStep = 30.0; // degrees of hue per 16th note
   private const double SegmentSpacing = 30.0; // hue offset between adjacent segments
 

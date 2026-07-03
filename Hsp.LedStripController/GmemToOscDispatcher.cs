@@ -20,12 +20,14 @@ public class GmemToOscDispatcher
 
   public GmemToOscDispatcher(
     GmemService memService, IOscClient oscClient,
-    LedStripProgramRegistry programRegistry, ILogger<GmemToOscDispatcher> logger)
+    LedStripProgramRegistry programRegistry,
+    ILogger<LedStrip> ledStripLogger,
+    ILogger<GmemToOscDispatcher> logger)
   {
     _memService = memService;
     _oscClient = oscClient;
 
-    _strips.AddRange(Enumerable.Range(0, NumLedStrips).Select(i => new LedStrip(i, programRegistry)));
+    _strips.AddRange(Enumerable.Range(0, NumLedStrips).Select(i => new LedStrip(i, programRegistry, ledStripLogger)));
 
     _logger = logger;
   }
@@ -48,7 +50,8 @@ public class GmemToOscDispatcher
   {
     var block = new double[LedStrip.CellsPerStrip * NumLedStrips];
     var segments = new double[LedStrip.NumSegmentsPerLedStrips];
-    while (!ct.IsCancellationRequested)
+    var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(10));
+    while (await timer.WaitForNextTickAsync(ct))
     {
       EmitFailures();
       try
@@ -67,9 +70,10 @@ public class GmemToOscDispatcher
           await msg.Send(_oscClient);
         }
       }
-      catch
+      catch (Exception ex)
       {
         // ignore
+        _logger.LogWarning(ex.Message);
         _failureCount++;
       }
     }

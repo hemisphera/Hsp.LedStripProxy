@@ -4,19 +4,21 @@ namespace Hsp.LedStripController;
 
 public class LedStripProgramRegistry
 {
-  private readonly Dictionary<int, Type> _programs = new();
+  private readonly Dictionary<int, Func<ILedStripProgram>> _factories = new();
 
 
-  public void Register<T>(int programNumber)
+  public void Register<T>(int programNumber) where T : ILedStripProgram, new()
   {
-    _programs[programNumber] = typeof(T);
+    _factories[programNumber] = static () => new T();
+  }
+
+  public void Register(int programNumber, Func<ILedStripProgram> factory)
+  {
+    _factories[programNumber] = factory;
   }
 
   public ILedStripProgram? Get(int programNumber)
   {
-    ILedStripProgram? program = null;
-    if (_programs.TryGetValue(programNumber, out var programType))
-      program = Activator.CreateInstance(programType) as ILedStripProgram;
-    return program;
+    return _factories.TryGetValue(programNumber, out var factory) ? factory() : null;
   }
 }

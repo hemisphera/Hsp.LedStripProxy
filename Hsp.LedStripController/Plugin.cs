@@ -42,6 +42,13 @@ public static class Plugin
       // Register LED strip programs (program number -> implementation).
       var programRegistry = host.Services.GetRequiredService<LedStripProgramRegistry>();
       programRegistry.Register<ColorCycleProgram>(1);
+      programRegistry.Register<PulseProgram>(2);
+      programRegistry.Register(3, () => new RandomProgram(1));
+      programRegistry.Register(4, () => new RandomProgram(0.5));
+      programRegistry.Register(5, () => new FallProgram(1, false));
+      programRegistry.Register(6, () => new FallProgram(1, true));
+      programRegistry.Register(7, () => new FallProgram(0.5, false));
+      programRegistry.Register(8, () => new FallProgram(0.5, true));
 
       commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
