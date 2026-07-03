@@ -7,6 +7,8 @@ namespace Hsp.LedStripController.Programs;
 ///   centre. Each star has a 4-segment trail (100%, 50%, 25%, 12%). The
 ///   animation restarts once the last trail segment has vanished.
 ///   Program number: 7 (expand) / 8 (collide).
+///   The program position is in 32nd notes, so it is divided by 2 to recover
+///   16th-note motion.
 /// </summary>
 public class ExpandProgram : ILedStripProgram
 {
@@ -36,14 +38,14 @@ public class ExpandProgram : ILedStripProgram
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer)
+  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
   {
     var first = (int)segments[0];
     var r = (first >> 16) & 0xFF;
     var g = (first >> 8) & 0xFF;
     var b = first & 0xFF;
 
-    var step = (int)Math.Floor(programPosition * _speed);
+    var step = (int)Math.Floor(programPosition * _speed / 2);
 
     int cycleLength;
     int leftLead;

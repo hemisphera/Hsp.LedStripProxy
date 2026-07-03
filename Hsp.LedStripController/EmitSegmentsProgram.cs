@@ -10,7 +10,7 @@ public class EmitSegmentsProgram : ILedStripProgram
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer)
+  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
   {
     for (var i = 0; i < segments.Length; i++)
     {

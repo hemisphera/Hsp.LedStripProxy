@@ -6,6 +6,8 @@ namespace Hsp.LedStripController.Programs;
 ///   Takes the first segment's color as base and applies a random amount of
 ///   opacity to each segment every 16th note.
 ///   Program number: 3.
+///   The program position is in 32nd notes, so it is divided by 2 to recover
+///   16th-note steps.
 /// </summary>
 public class RandomProgram : ILedStripProgram
 {
@@ -29,14 +31,14 @@ public class RandomProgram : ILedStripProgram
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer)
+  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
   {
     var first = (int)segments[0];
     var r = (first >> 16) & 0xFF;
     var g = (first >> 8) & 0xFF;
     var b = first & 0xFF;
 
-    var step = (int)Math.Floor(programPosition * _speed);
+    var step = (int)Math.Floor(programPosition * _speed / 2);
     if (step != _lastStep)
     {
       _lastStep = step;

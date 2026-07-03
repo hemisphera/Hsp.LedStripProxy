@@ -1,12 +1,12 @@
 namespace Hsp.LedStripController.Programs;
 
 /// <summary>
-///   Cycles a hue across the 12 segments based on the program position (in 16th notes).
+///   Cycles a hue across the 12 segments based on the program position (in 32nd notes).
 ///   Program number: 1.
 /// </summary>
 public class ColorCycleProgram : ILedStripProgram
 {
-  private const double HuesPerStep = 30.0; // degrees of hue per 16th note
+  private const double HuesPerStep = 15.0; // degrees of hue per 32nd note (= 30° per 16th note)
   private const double SegmentSpacing = 30.0; // hue offset between adjacent segments
 
   public void Stop()
@@ -17,7 +17,7 @@ public class ColorCycleProgram : ILedStripProgram
   {
   }
 
-  public void Render(double position, Span<double> segments, double[] buffer)
+  public void Render(double position, Span<double> segments, double[] buffer, double argument)
   {
     for (var i = 0; i < buffer.Length; i++)
     {

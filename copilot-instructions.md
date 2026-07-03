@@ -9,6 +9,19 @@ This is a project that converts MIDI messages into UDP messages that are sent to
 
 Timing is of the essence. The service must process MIDI messages and send UDP messages with minimal latency to ensure that the light show is synchronized with the music. The ESP32 must also be able to receive and process UDP messages quickly to control the LED strips in real-time.
 
+# Architecture
+
+The setup is as follows
+- REAPER as the host inside which the plugin "Hsp.LedStripController" will run
+- "ledcontroller.jsfx" as the interface. This is a REAPER JSFX plugin that lives on a track inside REAPER and receives the MIDI data from the protocol. It will then write the this data as into a shared GMEM memory block. The source for this JSFX plugin can be found at [https://github.com/hemisphera/reaper_scripts/blob/master/Effects/ledcontroller.jsfx]
+- The "Hsp.LedStripController" plugin will read from the shared GMEM block and convert the data to OSC messages. These messages are then broadcast over the network.
+- "Hsp.LedStripEmulator" serves as a debugging tool to emulate the LED strips and test them.
+- [Arduino/LedStripController/LedStripController.ino] is a program running on an Arduino Nano ESP32 (4 of them) receiving the OSC messages and controlling the LED strip that it is connected to.
+
+# GMEM Layout
+
+The memory layout of the GMEM block that the JSFX writes to must be compatible with the memory layout that the REAPER plugin reads from. Always make sure you respect the layout as defined in the description of the JSFX.
+
 # MIDI Protocol
 
 The service will listen for MIDI messages on a specified port and convert them into UDP messages. The UDP messages will be sent to the ESP32, which will interpret them and control the LED strips accordingly.

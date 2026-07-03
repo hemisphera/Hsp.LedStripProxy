@@ -6,6 +6,8 @@ namespace Hsp.LedStripController.Programs;
 ///   advances one segment per 16th note scaled by the speed coefficient. When
 ///   the last trail segment has vanished off-screen the animation restarts.
 ///   Program number: 5 (downward) / 6 (upward).
+///   The program position is in 32nd notes, so it is divided by 2 to recover
+///   16th-note motion.
 /// </summary>
 public class FallProgram : ILedStripProgram
 {
@@ -32,14 +34,14 @@ public class FallProgram : ILedStripProgram
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer)
+  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
   {
     var first = (int)segments[0];
     var r = (first >> 16) & 0xFF;
     var g = (first >> 8) & 0xFF;
     var b = first & 0xFF;
 
-    var step = (int)Math.Floor(programPosition * _speed);
+    var step = (int)Math.Floor(programPosition * _speed / 2);
     var cycleLength = LedStrip.NumSegmentsPerLedStrips + StarLength - 1; // 12 + 4 - 1 = 15
     var cyclePos = ((step % cycleLength) + cycleLength) % cycleLength;
 

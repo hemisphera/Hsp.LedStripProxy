@@ -4,5 +4,5 @@ public interface ILedStripProgram
 {
   void Stop();
   void Start(LedStrip ledStrip);
-  void Render(double programPosition, Span<double> segments, double[] buffer);
+  void Render(double programPosition, Span<double> segments, double[] buffer, double argument);
 }
