@@ -1,0 +1,108 @@
+﻿@page "/"
+@implements IDisposable
+@inject LedStripState StripState
+
+<PageTitle>LED Strip Emulator</PageTitle>
+
+<section class="hero-panel">
+	<div class="hero-copy-block">
+		<p class="eyebrow">OSC Monitor</p>
+		<h1>LED Strip Emulator</h1>
+		<p class="hero-copy">Listening on <strong>@_snapshot.ListenEndpoint</strong> for <strong>/led/1</strong> through <strong>/led/4</strong>.</p>
+	</div>
+	<div class="status-grid compact-status-grid">
+		<div class="status-card">
+			<span class="status-label">Last update</span>
+			<strong>@FormatLastUpdate(_snapshot.LastMessageAt)</strong>
+		</div>
+		<div class="status-card">
+			<span class="status-label">Mode</span>
+			<strong>@(_snapshot.HasSignal ? "Live" : "Waiting")</strong>
+		</div>
+	</div>
+</section>
+
+<section class="strip-grid">
+	@for (var stripIndex = 0; stripIndex < _snapshot.Strips.Count; stripIndex++)
+	{
+		var stripNumber = stripIndex + 1;
+		var strip = _snapshot.Strips[stripIndex];
+
+		<article class="strip-card">
+			<div class="strip-header">
+				<div>
+					<p class="strip-kicker">Strip @stripNumber</p>
+					<h2>/led/@stripNumber</h2>
+				</div>
+				<span class="strip-state @(StripHasSignal(strip) ? "strip-live" : "strip-idle")">@(StripHasSignal(strip) ? "Receiving" : "Idle")</span>
+			</div>
+
+			<div class="segments" role="img" aria-label="Strip @stripNumber LED segments">
+				@for (var segmentIndex = 0; segmentIndex < strip.Length; segmentIndex++)
+				{
+					var argb = strip[segmentIndex];
+					<div class="segment" style="@BuildSegmentStyle(argb)">
+						<span class="segment-index">@(segmentIndex + 1)</span>
+						<span class="segment-value">@FormatArgb(argb)</span>
+					</div>
+				}
+			</div>
+		</article>
+	}
+</section>
+
+@code {
+	private LedStripSnapshot _snapshot = LedStripSnapshot.Empty;
+
+	protected override void OnInitialized()
+	{
+		_snapshot = StripState.GetSnapshot();
+		StripState.Changed += HandleStripStateChanged;
+	}
+
+	public void Dispose()
+	{
+		StripState.Changed -= HandleStripStateChanged;
+	}
+
+	private void HandleStripStateChanged()
+	{
+		_ = InvokeAsync(() =>
+		{
+			_snapshot = StripState.GetSnapshot();
+			StateHasChanged();
+		});
+	}
+
+	private static bool StripHasSignal(int[] strip)
+	{
+		return strip.Any(argb => ((argb >> 24) & 0xff) > 0);
+	}
+
+	private static string FormatArgb(int argb)
+	{
+		return $"0x{unchecked((uint)argb):X8}";
+	}
+
+	private static string FormatLastUpdate(DateTimeOffset? lastMessageAt)
+	{
+		return lastMessageAt?.ToLocalTime().ToString("HH:mm:ss.fff") ?? "No packets yet";
+	}
+
+	private static string BuildSegmentStyle(int argb)
+	{
+		var alpha = ((argb >> 24) & 0xff) / 255d;
+		if (alpha <= 0)
+		{
+			return "background-color: rgba(24, 28, 35, 0.96); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.08);";
+		}
+
+		var red = (argb >> 16) & 0xff;
+		var green = (argb >> 8) & 0xff;
+		var blue = argb & 0xff;
+		var glowOpacity = Math.Max(alpha, 0.18d);
+		var borderOpacity = Math.Max(alpha, 0.35d);
+		var fillOpacity = Math.Min(alpha + 0.16d, 1d);
+		return FormattableString.Invariant($"background-color: rgba({red}, {green}, {blue}, {fillOpacity:0.###}); box-shadow: 0 0 16px rgba({red}, {green}, {blue}, {glowOpacity:0.###}), inset 0 1px 0 rgba(255, 255, 255, 0.18); border-color: rgba({red}, {green}, {blue}, {borderOpacity:0.###});");
+	}
+}
