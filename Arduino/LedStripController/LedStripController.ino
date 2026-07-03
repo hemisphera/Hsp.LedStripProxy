@@ -5,7 +5,7 @@
 
 #define NUM_LEDS 120
 #define LED_PIN D5
-#define MAX_PACKET_SIZE 16  // 10 segments + color
+#define OSC_PACKET_SIZE 72  // OSC: 8B addr + 16B typetag + 12×4B ARGB int32
 #define DEBUG 0
 
 const uint8_t stripId = 4;  // this is 1-based and is the actual number
@@ -15,7 +15,7 @@ const int blueChannel = 2;
 
 Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-uint8_t ledGridBuffer[MAX_PACKET_SIZE];
+uint8_t segBuffer[12][4];  // per-segment [A, R, G, B]
 int packetCount[2];
 int packetRate[2];
 
@@ -49,7 +49,7 @@ void setup() {
   //setupIndicatorLed();
 
   // setup UDP receiver
-  udp.begin(9977);
+  udp.begin(9100);
 
   // setup LED grid
   pixels.begin();  // Initialize the NeoPixel library
@@ -99,17 +99,28 @@ int readIncomingPackets() {
   int packetSize = udp.parsePacket();
   if (packetSize == 0) return 0;
 
-  if (packetSize > 0 && packetSize != MAX_PACKET_SIZE) {
-    packetCount[1]++;
+  if (packetSize != OSC_PACKET_SIZE) {
+    udp.flush();
     return -1;
   }
 
-  uint8_t udpBuffer[MAX_PACKET_SIZE];
-  int bytesRead = udp.read(udpBuffer, packetSize);
-  if (udpBuffer[0] != stripId - 1) return 0;
+  uint8_t udpBuffer[OSC_PACKET_SIZE];
+  int bytesRead = udp.read(udpBuffer, OSC_PACKET_SIZE);
+  if (bytesRead != OSC_PACKET_SIZE) return -1;
 
-  for (int i = 0; i < bytesRead; i++) {
-    ledGridBuffer[i] = udpBuffer[i];
+  // Verify OSC address "/led/N" where N is 1-based strip index
+  if (udpBuffer[0] != '/' || udpBuffer[1] != 'l' || udpBuffer[2] != 'e' ||
+      udpBuffer[3] != 'd' || udpBuffer[4] != '/' ||
+      udpBuffer[5] != ('0' + stripId)) {
+    return 0;
+  }
+
+  // Data starts at offset 24 (8B address + 16B typetag)
+  for (int i = 0; i < 12; i++) {
+    segBuffer[i][0] = udpBuffer[24 + i * 4 + 0];  // A
+    segBuffer[i][1] = udpBuffer[24 + i * 4 + 1];  // R
+    segBuffer[i][2] = udpBuffer[24 + i * 4 + 2];  // G
+    segBuffer[i][3] = udpBuffer[24 + i * 4 + 3];  // B
   }
   return 1;
 }
@@ -165,12 +176,11 @@ void updateLedGrid() {
 
   long start = millis();
   for (int i = 0; i < 12; i++) {
-    uint32_t col = 0;
-    float factor = (float)ledGridBuffer[i + 4] / (float)255;
-    uint8_t r = ledGridBuffer[1] * factor;
-    uint8_t g = ledGridBuffer[2] * factor;
-    uint8_t b = ledGridBuffer[3] * factor;
-    col = pixels.Color(r, g, b);
+    uint8_t a = segBuffer[i][0];
+    uint8_t r = ((uint16_t)segBuffer[i][1] * a) / 255;
+    uint8_t g = ((uint16_t)segBuffer[i][2] * a) / 255;
+    uint8_t b = ((uint16_t)segBuffer[i][3] * a) / 255;
+    uint32_t col = pixels.Color(r, g, b);
     for (int j = 0; j < 10; j++) {
       int8_t index = i * 10 + j;
       int32_t actual = pixels.getPixelColor(index);
