@@ -7,7 +7,7 @@ public class LedStrip
   private readonly LedStripProgramRegistry _programRegistry;
   private readonly ILogger _logger;
   public const int NumSegmentsPerLedStrips = 12;
-  public const int CellsPerStrip = NumSegmentsPerLedStrips + 4; // 12 segment ARGB + program number + program position + program argument + brightness multiplier
+  public const int CellsPerStrip = NumSegmentsPerLedStrips + 5; // 12 segment ARGB + program number + program position + 2 generic arguments + brightness multiplier
 
   private readonly int _memOffset;
   private ILedStripProgram? _currProgram;
@@ -34,8 +34,9 @@ public class LedStrip
 
     var programNumber = (int)myBlock[NumSegmentsPerLedStrips];
     var programPosition = myBlock[NumSegmentsPerLedStrips + 1];
-    var programArgument = myBlock[NumSegmentsPerLedStrips + 2];
-    var multiplier = myBlock[NumSegmentsPerLedStrips + 3]; // slot 15: brightness multiplier (0.0-1.0)
+    var programArgument1 = myBlock[NumSegmentsPerLedStrips + 2]; // slot 14: generic argument 1 (Note 16)
+    var programArgument2 = myBlock[NumSegmentsPerLedStrips + 3]; // slot 15: generic argument 2 (Note 17)
+    var multiplier = myBlock[NumSegmentsPerLedStrips + 4]; // slot 16: brightness multiplier (0.0-1.0)
     if (programNumber != _currProgramNo)
     {
       _logger.LogDebug("Led {index} switching to program {number}", Index, programNumber);
@@ -46,7 +47,7 @@ public class LedStrip
     }
 
     var program = _currProgram ?? _defaultProgram;
-    program.Render(programPosition, segments, buffer, programArgument);
+    program.Render(programPosition, segments, buffer, new ProgramArguments(programArgument1, programArgument2));
 
     // The JSFX writes raw segment brightness (no multiplier) into the alpha
     // channel; the backend applies the per-strip brightness multiplier here.

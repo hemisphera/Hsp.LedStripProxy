@@ -17,7 +17,7 @@ public class ColorCycleProgram : ILedStripProgram
   {
   }
 
-  public void Render(double position, Span<double> segments, double[] buffer, double argument)
+  public void Render(double position, Span<double> segments, double[] buffer, ProgramArguments arguments)
   {
     for (var i = 0; i < buffer.Length; i++)
     {

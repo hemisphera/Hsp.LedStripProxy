@@ -40,19 +40,22 @@ public static class Plugin
       var commands = host.Services.GetRequiredService<ICommandRegistry>();
 
       // Register LED strip programs (program number -> implementation).
+      // Speed is no longer baked into the program; it is controlled live via the
+      // generic argument (MIDI Note 16 velocity). Speed-only variants now map to
+      // the same pattern/direction variant (e.g. 3==4, 5==7, 6==8, 9==11, 10==12).
       var programRegistry = host.Services.GetRequiredService<LedStripProgramRegistry>();
       programRegistry.Register<ColorCycleProgram>(1);
       programRegistry.Register<PulseProgram>(2);
-      programRegistry.Register(3, () => new RandomProgram(1));
-      programRegistry.Register(4, () => new RandomProgram(0.5));
-      programRegistry.Register(5, () => new FallProgram(1, false));
-      programRegistry.Register(6, () => new FallProgram(1, true));
-      programRegistry.Register(7, () => new FallProgram(0.5, false));
-      programRegistry.Register(8, () => new FallProgram(0.5, true));
-      programRegistry.Register(9, () => new ExpandProgram(1, true));
-      programRegistry.Register(10, () => new ExpandProgram(1, false));
-      programRegistry.Register(11, () => new ExpandProgram(0.5, true));
-      programRegistry.Register(12, () => new ExpandProgram(0.5, false));
+      programRegistry.Register(3, () => new RandomProgram());
+      programRegistry.Register(4, () => new RandomProgram());
+      programRegistry.Register(5, () => new FallProgram(false));
+      programRegistry.Register(6, () => new FallProgram(true));
+      programRegistry.Register(7, () => new FallProgram(false));
+      programRegistry.Register(8, () => new FallProgram(true));
+      programRegistry.Register(9, () => new ExpandProgram(true));
+      programRegistry.Register(10, () => new ExpandProgram(false));
+      programRegistry.Register(11, () => new ExpandProgram(true));
+      programRegistry.Register(12, () => new ExpandProgram(false));
 
       commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);

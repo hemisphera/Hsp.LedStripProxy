@@ -6,11 +6,12 @@ namespace Hsp.LedStripController.Programs;
 ///   outward; when false they start at the outer edges and collide at the
 ///   centre. Each star has a 4-segment trail (100%, 50%, 25%, 12%). The
 ///   animation restarts once the last trail segment has vanished.
-///   Program number: 7 (expand) / 8 (collide).
-///   The program position is in 32nd notes, so it is divided by 2 to recover
-///   16th-note motion.
+///   Program number: 7 (expand) / 8 (collide). The animation speed is driven by
+///   the generic argument (MIDI Note 16 velocity), expressed as a musical note
+///   (velocities 0 and 1 run at the maximum 32nd-note speed; higher velocity is
+///   slower; see <see cref="NoteSpeed" />).
 /// </summary>
-public class ExpandProgram : ILedStripProgram
+public class ExpandProgram : SpeedScaledProgram
 {
   private const int StarLength = 4; // lead + 3 trail segments
   private static readonly int[] TrailAlphas = { 255, 128, 64, 31 }; // 100%, 50%, 25%, 12%
@@ -19,33 +20,31 @@ public class ExpandProgram : ILedStripProgram
   private const int CenterRight = LedStrip.NumSegmentsPerLedStrips / 2; // 6
 
 
-  private readonly double _speed;
   private readonly bool _expand;
 
 
-  public ExpandProgram(double speed, bool expand)
+  public ExpandProgram(bool expand)
   {
-    _speed = speed;
     _expand = expand;
   }
 
 
-  public void Start(LedStrip ledStrip)
+  public override void Start(LedStrip ledStrip)
   {
   }
 
-  public void Stop()
+  public override void Stop()
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
+  public override void Render(double programPosition, Span<double> segments, double[] buffer, ProgramArguments arguments)
   {
     var first = (int)segments[0];
     var r = (first >> 16) & 0xFF;
     var g = (first >> 8) & 0xFF;
     var b = first & 0xFF;
 
-    var step = (int)Math.Floor(programPosition * _speed / 2);
+    var step = (int)Math.Floor(GetScaledPosition(programPosition, in arguments));
 
     int cycleLength;
     int leftLead;

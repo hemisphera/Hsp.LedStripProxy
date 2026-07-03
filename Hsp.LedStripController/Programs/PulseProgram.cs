@@ -18,7 +18,7 @@ public class PulseProgram : ILedStripProgram
   {
   }
 
-  public void Render(double programPosition, Span<double> segments, double[] buffer, double argument)
+  public void Render(double programPosition, Span<double> segments, double[] buffer, ProgramArguments arguments)
   {
     // Extract RGB from the first segment (packed ARGB int32); ignore its original alpha.
     var first = (int)segments[0];
