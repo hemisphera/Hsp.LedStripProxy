@@ -5,7 +5,7 @@ namespace Hsp.LedStripController.Programs;
 ///   is at 100% opacity, followed by a trail at 50%, 25% and 12%. The star
 ///   advances one segment per 16th note scaled by the speed coefficient. When
 ///   the last trail segment has vanished off-screen the animation restarts.
-///   Program number: 5 (downward) / 6 (upward). The animation speed is driven by
+///   Program number: 4 (downward) / 5 (upward). The animation speed is driven by
 ///   the generic argument (MIDI Note 16 velocity), expressed as a musical note
 ///   (velocities 0 and 1 run at the maximum 32nd-note speed; higher velocity is
 ///   slower; see <see cref="NoteSpeed" />).

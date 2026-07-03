@@ -6,7 +6,7 @@ namespace Hsp.LedStripController.Programs;
 ///   outward; when false they start at the outer edges and collide at the
 ///   centre. Each star has a 4-segment trail (100%, 50%, 25%, 12%). The
 ///   animation restarts once the last trail segment has vanished.
-///   Program number: 7 (expand) / 8 (collide). The animation speed is driven by
+///   Program number: 6 (expand) / 7 (collide). The animation speed is driven by
 ///   the generic argument (MIDI Note 16 velocity), expressed as a musical note
 ///   (velocities 0 and 1 run at the maximum 32nd-note speed; higher velocity is
 ///   slower; see <see cref="NoteSpeed" />).

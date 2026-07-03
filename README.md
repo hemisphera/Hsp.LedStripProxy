@@ -38,10 +38,8 @@ The JSFX writes one block of 17 doubles per strip into the shared GMEM block.
 ## Supported programs
 
 The program number (GMEM slot 12) selects one of the programs registered in
-`Plugin.cs`. Speed is no longer baked into the program — it is controlled live
-through Argument 1 (MIDI Note 16 velocity). The speed-only variants therefore
-map to the same pattern/direction variant (e.g. `3 == 4`, `5 == 7`,
-`6 == 8`, `9 == 11`, `10 == 12`).
+`Plugin.cs`. Speed is controlled live through Argument 1 (MIDI Note 16
+velocity), so each pattern/direction variant is registered only once.
 
 | #  | Program              | Direction/Variant       | Speed-scaled | Description                                                                                                                                                                                                                                                                                  |
 |----|----------------------|-------------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -49,15 +47,10 @@ map to the same pattern/direction variant (e.g. `3 == 4`, `5 == 7`,
 | 1  | **ColorCycle**       | —                       | No           | Cycles a hue across the 12 segments based on the program position. Hue advances 15° per 32nd note, with a 30° hue offset between adjacent segments, producing a rolling rainbow. Ignores Argument 1. Output is always full alpha (255).                                                     |
 | 2  | **Pulse**            | —                       | Yes          | Takes the color of segment 0 as the base RGB and replicates it across all 12 segments, then pulses the opacity from 0% → 100% → 0% as a triangle wave over a cycle of 32 scaled steps. At the fastest speed (Argument 1 = 0/1) one cycle equals one bar of 4/4 (32 32nd notes); higher velocities lengthen the cycle. |
 | 3  | **Random**           | —                       | Yes          | Takes segment 0's color as the base RGB and assigns a **random opacity** (0–255) to each segment. New random values are generated once per animation step.                                                                                                                                 |
-| 4  | **Random**           | —                       | Yes          | Identical to program 3 (speed-only variant).                                                                                                                                                                                                                                                |
-| 5  | **Fall**             | Downward                | Yes          | A "falling star" with a 4-segment trail (100%, 50%, 25%, 12% opacity) moves from segment 0 toward segment 11 and restarts once the last trail segment has left the strip. Uses segment 0's color as the base RGB.                                                                            |
-| 6  | **Fall**             | Upward                  | Yes          | Same as program 5 but the star travels from segment 11 toward segment 0, with the trail trailing behind in the opposite direction.                                                                                                                                                         |
-| 7  | **Fall**             | Downward                | Yes          | Identical to program 5 (speed-only variant).                                                                                                                                                                                                                                                |
-| 8  | **Fall**             | Upward                  | Yes          | Identical to program 6 (speed-only variant).                                                                                                                                                                                                                                                |
-| 9  | **Expand**           | Expand outward          | Yes          | Two stars start at the center (segments 5 and 6) and travel symmetrically outward toward the edges, each leaving a 4-segment trail (100%, 50%, 25%, 12%) pointing back toward the center. Restarts once the last trail segment has vanished. Uses segment 0's color as the base RGB.    |
-| 10 | **Expand**           | Collide inward          | Yes          | Two stars start at the outer edges (segments 0 and 11) and travel inward, colliding at the center and passing through, each leaving a 4-segment trail pointing outward.                                                                                                                     |
-| 11 | **Expand**           | Expand outward          | Yes          | Identical to program 9 (speed-only variant).                                                                                                                                                                                                                                                |
-| 12 | **Expand**           | Collide inward          | Yes          | Identical to program 10 (speed-only variant).                                                                                                                                                                                                                                               |
+| 4  | **Fall**             | Downward                | Yes          | A "falling star" with a 4-segment trail (100%, 50%, 25%, 12% opacity) moves from segment 0 toward segment 11 and restarts once the last trail segment has left the strip. Uses segment 0's color as the base RGB.                                                                            |
+| 5  | **Fall**             | Upward                  | Yes          | Same as program 4 but the star travels from segment 11 toward segment 0, with the trail trailing behind in the opposite direction.                                                                                                                                                         |
+| 6  | **Expand**           | Expand outward          | Yes          | Two stars start at the center (segments 5 and 6) and travel symmetrically outward toward the edges, each leaving a 4-segment trail (100%, 50%, 25%, 12%) pointing back toward the center. Restarts once the last trail segment has vanished. Uses segment 0's color as the base RGB.    |
+| 7  | **Expand**           | Collide inward          | Yes          | Two stars start at the outer edges (segments 0 and 11) and travel inward, colliding at the center and passing through, each leaving a 4-segment trail pointing outward.                                                                                                                     |
 
 ### Program arguments
 
@@ -66,7 +59,7 @@ Arguments are read from GMEM slots 14 and 15 and passed into every program's
 
 | Argument    | GMEM slot | MIDI source            | Used by                                                                                       |
 |-------------|-----------|------------------------|-----------------------------------------------------------------------------------------------|
-| Argument 1  | 14        | MIDI Note 16 velocity  | Animation **speed** for all speed-scaled programs (2–4, 5–8, 9–12). Ignored only by program 1. |
+| Argument 1  | 14        | MIDI Note 16 velocity  | Animation **speed** for all speed-scaled programs (2–7). Ignored only by program 1. |
 | Argument 2  | 15        | MIDI Note 17 velocity  | Reserved. Currently unused by all shipped programs.                                          |
 
 For the speed-scaled programs, Argument 1 selects a musical-note duration: the
