@@ -49,6 +49,10 @@ public static class Plugin
       programRegistry.Register(6, () => new FallProgram(1, true));
       programRegistry.Register(7, () => new FallProgram(0.5, false));
       programRegistry.Register(8, () => new FallProgram(0.5, true));
+      programRegistry.Register(9, () => new ExpandProgram(1, true));
+      programRegistry.Register(10, () => new ExpandProgram(1, false));
+      programRegistry.Register(11, () => new ExpandProgram(0.5, true));
+      programRegistry.Register(12, () => new ExpandProgram(0.5, false));
 
       commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
