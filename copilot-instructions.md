@@ -5,6 +5,10 @@ This is a project that converts MIDI messages into UDP messages that are sent to
 - A service written in .NET using ASP.NET Core that listens to MIDI messages and sends UDP messages to the LED strips.
 - An arduino sketch that runs on an ESP32 microcontroller, which receives the UDP messages and controls the LED strips accordingly.
 
+# Dependencies
+
+This project depends on ReaSharp. You can find the sources at https://github.com/hemisphera/ReaSharp.
+
 # Critical Information
 
 Timing is of the essence. The service must process MIDI messages and send UDP messages with minimal latency to ensure that the light show is synchronized with the music. The ESP32 must also be able to receive and process UDP messages quickly to control the LED strips in real-time.

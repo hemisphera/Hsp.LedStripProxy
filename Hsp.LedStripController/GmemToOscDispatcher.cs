@@ -33,6 +33,20 @@ public class GmemToOscDispatcher
   }
 
 
+  public bool IsRunning => _loopTask is { IsCompleted: false };
+
+  public async Task<bool> ToggleAsync()
+  {
+    if (IsRunning)
+    {
+      await StopAsync();
+      return false;
+    }
+
+    await StartAsync();
+    return true;
+  }
+
   public async Task StartAsync()
   {
     await StopAsync();

@@ -53,6 +53,8 @@ public static class Plugin
 
       commands.Register("HSP_LEDCONTROLLER_START", "LED Controller: Start", Commands.Start);
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
+      var toggleCommand = commands.Register("HSP_LEDCONTROLLER_TOGGLE", "LED Controller: Toggle", Commands.Toggle);
+      Commands.ToggleCommandId = toggleCommand.Id;
       return 1;
     }
     catch (Exception ex)
