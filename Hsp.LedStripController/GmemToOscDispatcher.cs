@@ -8,24 +8,25 @@ namespace Hsp.LedStripController;
 public class GmemToOscDispatcher
 {
   private readonly GmemService _memService;
-  private readonly IOscClient _oscClient;
+  private readonly Func<IOscClient> _oscClientFactory;
   private readonly List<LedStrip> _strips = [];
   private readonly ILogger<GmemToOscDispatcher> _logger;
   private const int NumLedStrips = 4;
   private CancellationTokenSource? _cts;
   private Task? _loopTask;
+  private IOscClient? _oscClient;
   private int _failureCount;
   private Stopwatch? _failureWatch;
 
 
   public GmemToOscDispatcher(
-    GmemService memService, IOscClient oscClient,
+    GmemService memService, Func<IOscClient> oscClientFactory,
     LedStripProgramRegistry programRegistry,
     ILogger<LedStrip> ledStripLogger,
     ILogger<GmemToOscDispatcher> logger)
   {
     _memService = memService;
-    _oscClient = oscClient;
+    _oscClientFactory = oscClientFactory;
 
     _strips.AddRange(Enumerable.Range(0, NumLedStrips).Select(i => new LedStrip(i, programRegistry, ledStripLogger)));
 
@@ -55,12 +56,13 @@ public class GmemToOscDispatcher
     _cts = new CancellationTokenSource();
     var token = _cts.Token;
     _memService.Connect("ledcontroller");
+    _oscClient = _oscClientFactory();
     await _oscClient.ConnectAsync();
-    _loopTask = Loop(token);
+    _loopTask = Loop(token, _oscClient);
     _logger.LogInformation("OSC dispatcher started.");
   }
 
-  private async Task Loop(CancellationToken ct)
+  private async Task Loop(CancellationToken ct, IOscClient oscClient)
   {
     var block = new double[LedStrip.CellsPerStrip * NumLedStrips];
     var segments = new double[LedStrip.NumSegmentsPerLedStrips];
@@ -81,7 +83,7 @@ public class GmemToOscDispatcher
             msg.PushAtom((int)segments[j]);
           }
 
-          await msg.Send(_oscClient);
+          await msg.Send(oscClient);
         }
       }
       catch (Exception ex)
@@ -123,7 +125,12 @@ public class GmemToOscDispatcher
     }
 
     _memService.Disconnect();
-    await _oscClient.DisconnectAsync();
+    if (_oscClient != null)
+    {
+      await _oscClient.DisconnectAsync();
+      _oscClient.Dispose();
+      _oscClient = null;
+    }
 
     _cts.Dispose();
     _cts = null;

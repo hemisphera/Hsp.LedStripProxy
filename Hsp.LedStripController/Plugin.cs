@@ -28,7 +28,12 @@ public static class Plugin
       {
         sc.AddSingleton<ICommandRegistry, DefaultCommandRegistry>();
         sc.AddSingleton<GmemService>();
-        sc.AddSingleton<IOscClient>(c => new OscUdpClient(9100));
+        // The OSC client is created fresh on each dispatcher start (via the
+        // factory below) so that the underlying UDP socket is rebound to the
+        // current network interface. Reusing one socket for the plugin lifetime
+        // would keep it bound to whatever network was active when the plugin
+        // loaded, so a WiFi change would not take effect until REAPER restarts.
+        sc.AddSingleton<Func<IOscClient>>(c => () => new OscUdpClient(9100));
         sc.AddSingleton<LedStripProgramRegistry>();
         sc.AddSingleton<GmemToOscDispatcher>();
       })
