@@ -122,6 +122,10 @@ public class GmemToOscDispatcher
       {
         _logger.LogWarning("Loop task did not complete within timeout.");
       }
+      catch (OperationCanceledException)
+      {
+        // Expected: the loop was cancelled by the CTS above.
+      }
     }
 
     _memService.Disconnect();
