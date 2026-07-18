@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hsp.LedStripController.Programs;
 using Hsp.Osc;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,15 @@ namespace Hsp.LedStripController;
 
 public static class Plugin
 {
+  /// <summary>
+  /// Resolved once at load time so the <see cref="ToggleAction"/> callback
+  /// (invoked by REAPER on the main thread to query on/off state) can read
+  /// <see cref="GmemToOscDispatcher.IsRunning"/> without going through DI on
+  /// every call.
+  /// </summary>
+  private static GmemToOscDispatcher? Dispatcher { get; set; }
+
+
   [UnmanagedCallersOnly(EntryPoint = "ReaperPluginEntry")]
   public static int ReaperPluginEntry(nint hInstance, nint rec)
   {
@@ -60,11 +70,47 @@ public static class Plugin
       commands.Register("HSP_LEDCONTROLLER_STOP", "LED Controller: Stop", Commands.Stop);
       var toggleCommand = commands.Register("HSP_LEDCONTROLLER_TOGGLE", "LED Controller: Toggle", Commands.Toggle);
       Commands.ToggleCommandId = toggleCommand.Id;
+
+      // Register a toggleaction callback so REAPER treats the Toggle command as
+      // a real toggle action: the Actions list shows a checkmark and a toolbar
+      // button stays pressed while the dispatcher is running. SetToggleCommandState
+      // only works for ReaScripts (per the REAPER docs), so the canonical mechanism
+      // for native/custom actions is to answer REAPER's toggleaction queries.
+      Dispatcher = host.Services.GetRequiredService<GmemToOscDispatcher>();
+      RegisterToggleAction();
       return 1;
     }
     catch (Exception ex)
     {
       return 0;
     }
+  }
+
+
+  private static void RegisterToggleAction()
+  {
+    unsafe
+    {
+      // int (*)(int command) — returns -1 (not ours), 0 (off), 1 (on).
+      var togglePtr = (IntPtr)(delegate* unmanaged[Cdecl]<int, int>)&ToggleAction;
+      var toggleName = Marshal.StringToHGlobalAnsi("toggleaction");
+      Reaper.Register(toggleName, togglePtr);
+      Marshal.FreeHGlobal(toggleName);
+    }
+  }
+
+  /// <summary>
+  /// Queried by REAPER to obtain the on/off state of a registered action.
+  /// Returning 0/1 for our Toggle command makes it behave as a toolbar toggle
+  /// button / checked Actions list entry; -1 for anything else means "not ours".
+  /// </summary>
+  [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+  private static int ToggleAction(int command)
+  {
+    var id = Commands.ToggleCommandId;
+    if (!id.HasValue || command != id.Value)
+      return -1;
+
+    return Dispatcher?.IsRunning == true ? 1 : 0;
   }
 }
