@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+# Only build when something is pushed to the release branch.
+# No pull-request triggers are configured.
+
+jobs:
+  build:
+    name: Publish (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+          - os: ubuntu-latest
+            rid: linux-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # The REAPER plugin is a native shared library (PublishAot=true +
+      # NativeLib=Shared). AOT only runs during `dotnet publish`, never during
+      # `dotnet build`, so we publish it per-RID with PublishAot enabled.
+      # This produces reaper_ledstripcontroller.dll/.so/.dylib.
+      - name: Publish REAPER plugin (NativeAOT)
+        run: >
+          dotnet publish Hsp.LedStripController/Hsp.LedStripController.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          /p:PublishAot=true
+
+      - name: Upload REAPER plugin
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reaper-plugin-${{ matrix.rid }}
+          path: |
+            Hsp.LedStripController/bin/Release/net10.0/${{ matrix.rid }}/publish/reaper_ledstripcontroller.*
+          if-no-files-found: warn
